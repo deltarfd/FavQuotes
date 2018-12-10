@@ -34,28 +34,14 @@
     });
 
     //Favqs.com API
-    $defaults = array(
-        CURLOPT_URL             => 'https://favqs.com/api/qotd.json',
-        CURLOPT_POST            => false,
-        CURLOPT_HEADER          => false,
-        CURLOPT_SSL_VERIFYPEER  => false,
-        CURLOPT_RETURNTRANSFER  => true,
-        CURLOPT_SSL_VERIFYHOST  => false,
-    );
     $headers = array {
       'Content-Type': 'application/json',
       'Authorization': 'Token token= 8cef8b786e4874bc90b480f682e67fab'
     }
-    $curl               = curl_init();
+    $curl = curl_init("https://favqs.com/api/qotd.json");
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt_array($curl, $defaults);
-    $curl_response      = curl_exec($curl);
-    $json_result       = json_decode($curl_response);
-
-    // DUMP THE CURL-ERROR INFORMATION:
-    var_dump(curl_error($curl));
-    curl_close($curl);
-
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    $result = json_decode(curl_exec($curl));
 
     // buat route untuk webhook
     $app->post('/webhook', function ($request, $response) use ($bot, $httpClient)
