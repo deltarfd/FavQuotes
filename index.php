@@ -33,6 +33,25 @@
       echo "Welcome at Slim Framework";
     });
      
+    //Favqs.com API
+    $defaults = array(
+        CURLOPT_URL             => 'https://favqs.com/api/qotd.json',
+        CURLOPT_POST            => false,
+        CURLOPT_HEADER          => 'Authorization: Token token="8cef8b786e4874bc90b480f682e67fab"',
+        CURLOPT_SSL_VERIFYPEER  => false,
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_SSL_VERIFYHOST  => false,
+    );
+    $curl               = curl_init();
+    curl_setopt_array($curl, $defaults);
+    $curl_response      = curl_exec($curl);
+    $json_result       = json_decode($curl_response);
+
+    // DUMP THE CURL-ERROR INFORMATION:
+    var_dump(curl_error($curl));
+    curl_close($curl);
+
+
     // buat route untuk webhook
     $app->post('/webhook', function ($request, $response) use ($bot, $httpClient)
     {
@@ -68,30 +87,40 @@
                         $event['source']['type'] == 'room'
                       ){
                        //message from group / room      
-                       if($event['source']['userId']){
-        
+                        if($event['source']['userId']){
                             $userId     = $event['source']['userId'];
                             $getprofile = $bot->getProfile($userId);
                             $profile    = $getprofile->getJSONDecodedBody();
-                            $greetings  = new TextMessageBuilder("Halo, ".$profile['displayName']);
+                            $textMessageBuilder = new TextMessageBuilder("Halo, ".$profile['displayName']);
+                            $stickerMessageBuilder = new StickerMessageBuilder(2, 179);   
+                            $multiMessageBuilder = new MultiMessageBuilder();
+
+                            $multiMessageBuilder->add(textMessageBuilder);
+                            $multiMessageBuilder->add(textMessageBuilder);
                         
-                            $result = $bot->replyMessage($event['replyToken'], $greetings);
+                            $result = $bot->replyMessage($event['replyToken'], $multiMessageBuilder);
                             return $res->withJson($result->getJSONDecodedBody(), $result->getHTTPStatus());
                         
-                        } else {
+                        } 
+                        else {
                             // send same message as reply to user
                             $result = $bot->replyText($event['replyToken'], $event['message']['text']);
                             return $res->withJson($result->getJSONDecodedBody(), $result->getHTTPStatus());
                         }        
                       } //message from single user
-                      else {
-                        if (strtolower($event['message']['text']) == 'user id') {
- 
+                    else {
+                        if (strtolower($event['message']['text']) == ('quotes' || 'quote'){
+
+                            $result = $bot->replyText($event['replyToken'], $json_result['body']);
+
+                        }
+                        elseif (strtolower($event['message']['text']) == 'user id') {
+
                             $result = $bot->replyText($event['replyToken'], $event['source']['userId']);
- 
+
                         }
                         elseif (strtolower($event['message']['text']) == 'flex message') {
- 
+
                             $flexTemplate = file_get_contents("flex_message.json"); // template flex message
                             $result = $httpClient->post(LINEBot::DEFAULT_ENDPOINT_BASE . '/v2/bot/message/reply', [
                                 'replyToken' => $event['replyToken'],
@@ -129,7 +158,7 @@
                          
                             return $res->withJson($result->getJSONDecodedBody(), $result->getHTTPStatus());
                         }
-                      } 
+                    } 
                     
                 }
             } 
